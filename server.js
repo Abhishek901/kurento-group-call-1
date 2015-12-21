@@ -205,8 +205,8 @@ function join(socket, room, callback) {
             }
             return callback(error);
         }
-        outgoingMedia.setMaxVideoSendBandwidth(30);
-        outgoingMedia.setMinVideoSendBandwidth(20);
+        outgoingMedia.setMaxVideoRecvBandwidth(30);
+        outgoingMedia.setMinVideoRecvBandwidth(20);
         userSession.outgoingMedia = outgoingMedia;
 
         // add ice candidate the get sent before endpoint is established
