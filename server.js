@@ -32,9 +32,6 @@ var settings = {
         KURENTOURL: "ws://localhost:8888/kurento"
 };
 
-// Singleton Kurento Client, gets set on first interaction
-var kurentoClient = null;
-
 /*
  * Server startup
  */
@@ -173,7 +170,8 @@ function getRoom(roomName, callback) {
                 room = {
                     name: roomName,
                     pipeline: pipeline,
-                    participants: {}
+                    participants: {},
+                    kurentoClient: kurentoClient
                 };
                 rooms[roomName] = room;
                 callback(null, room);
@@ -488,17 +486,12 @@ function addIceCandidate(socket, message) {
  * @returns {*}
  */
 function getKurentoClient(callback) {
-    if (kurentoClient !== null) {
-        return callback(null, kurentoClient);
-    }
-
-    kurento(settings.KURENTOURL, function (error, _kurentoClient) {
+    kurento(settings.KURENTOURL, function (error, kurentoClient) {
         if (error) {
             var message = 'Coult not find media server at address ' + settings.KURENTOURL;
             return callback(message + ". Exiting with error " + error);
         }
 
-        kurentoClient = _kurentoClient;
         callback(null, kurentoClient);
     });
 }
