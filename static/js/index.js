@@ -48,6 +48,12 @@ socket.on("message", function (message) {
             console.log("receiveVideoAnswer from : " + message.sessionId);
             onReceiveVideoAnswer(message);
             break;
+        case "startRecording":
+            console.log("Starting recording");
+            break;
+        case "stopRecording":
+            console.log("Stopped recording");
+            break;
         case "iceCandidate":
             console.log("iceCandidate from : " + message.sessionId);
             var participant = participants[message.sessionId];
@@ -174,17 +180,37 @@ function incomingCall(message) {
  * @param message
  */
 function onExistingParticipants(message) {
+    // Standard constraints
     var constraints = {
         audio: true,
         video: {
-            mandatory: {
-                maxWidth: 160,
-                maxHeight: 160,
-                maxFrameRate: 15,
-                minFrameRate: 15
+            frameRate: {
+                min: 1, ideal: 15, max: 30
+            },
+            width: {
+                min: 32, ideal: 50, max: 320
+            },
+            height: {
+                min: 32, ideal: 50, max: 320
             }
         }
     };
+
+    // Temasys constraints
+    /*var constraints = {
+     audio: true,
+         video: {
+             mandatory: {
+                 minWidth: 32,
+                 maxWidth: 320,
+                 minHeight: 32,
+                 maxHeight: 320,
+                 maxFrameRate: 30,
+                 minFrameRate: 1
+             }
+         }
+     };*/
+
     console.log(sessionId + " register in room " + message.roomName);
 
     // create video for current user to send to server
@@ -213,9 +239,6 @@ function onExistingParticipants(message) {
         localVideoCurrentId = sessionId;
         localVideo.src = localParticipant.rtcPeer.localVideo.src;
         localVideo.muted = true;
-
-        // Internet Explorer fix to fix audio :( has to be done after attachMediaStream is finished
-        //participants[sessionId].rtcPeer.getLocalStream().getAudioTracks()[0].enabled = true;
 
         console.log("local participant id : " + sessionId);
         this.generateOffer(localParticipant.offerToReceiveVideo.bind(localParticipant));
@@ -300,6 +323,26 @@ function onReceiveVideoAnswer(message) {
 }
 
 /**
+ * Start recording video
+ */
+function startRecording(){
+    var data = {
+        id: "startRecording"
+    };
+    sendMessage(data);
+}
+
+/**
+ * Stop recording video
+ */
+function stopRecording(){
+    var data = {
+        id: "stopRecording"
+    };
+    sendMessage(data);
+}
+
+/**
  * Create video DOM element
  * @param participant
  * @returns {Element}
@@ -309,7 +352,6 @@ function createVideoForParticipant(participant) {
     var videoId = "video-" + participant.id;
     var video = document.createElement('video');
 
-    video.style = "width: 150px; height: 150px; float: left;"
     video.autoplay = true;
     video.id = videoId;
     video.poster = "img/webrtc.png";
@@ -334,6 +376,8 @@ function disableElements(functionName){
         document.getElementById('sendInvite').disabled = false;
         document.getElementById('otherUserName').disabled = false;
         document.getElementById('leaveRoom').disabled = false;
+        document.getElementById('startRecording').disabled = false;
+        document.getElementById('stopRecording').disabled = false;
     }
     if(functionName === "leaveRoom"){
         document.getElementById('leaveRoom').disabled = true;
@@ -341,6 +385,8 @@ function disableElements(functionName){
         document.getElementById('joinRoom').disabled = false;
         document.getElementById('sendInvite').disabled = false;
         document.getElementById('otherUserName').disabled = false;
+        document.getElementById('startRecording').disabled = true;
+        document.getElementById('stopRecording').disabled = true;
     }
     if(functionName === "call"){
         document.getElementById('roomName').disabled = true;

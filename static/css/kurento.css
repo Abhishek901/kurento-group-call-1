@@ -53,6 +53,12 @@ video,#console {
 	z-index: 1;
 }
 
+#video_list video {
+	width: 150px;
+	height: 150px;
+	float: left;
+}
+
 div#videoSmall {
 	width: 240px;
 	height: 180px;

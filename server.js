@@ -24,6 +24,8 @@ var express = require('express');
 // kurento required
 var path = require('path');
 var url = require('url');
+var http = require('http');
+
 var kurento = require('kurento-client');
 
 // Constants
@@ -34,16 +36,34 @@ var settings = {
 
 /*
  * Server startup
- */
+*/
 var app = express();
 var asUrl = url.parse(settings.WEBSOCKETURL);
 var port = asUrl.port;
+
+var server;
+
 var server = app.listen(port, function () {
     console.log('Kurento Tutorial started');
     console.log('Open ' + url.format(asUrl) + ' with a WebRTC capable browser');
 });
 
 var io = require('socket.io')(server);
+// Default https code, uncomment this and comment out the above server code to use it
+/*
+var fs = require('fs');
+
+var options = {
+    key: fs.readFileSync('key.pem'),
+    cert: fs.readFileSync('cert.pem')
+};
+
+var httpsPort = 8081;
+var https = require('https');
+var httpsServer;
+httpsServer = https.createServer(options, app).listen(httpsPort);
+var io = require('socket.io')(httpsServer)'
+*/
 
 /**
  * Message handlers
@@ -101,6 +121,14 @@ io.on('connection', function (socket) {
             case 'call':
                 console.log("Calling");
                 call(socket.id, message.to, message.from);
+                break;
+            case "startRecording":
+                console.log("Starting recording");
+                startRecord(socket);
+                break;
+            case "stopRecording":
+                console.log("Stopped recording");
+                stopRecord(socket);
                 break;
             case 'onIceCandidate':
                 addIceCandidate(socket, message);
@@ -203,7 +231,7 @@ function join(socket, room, callback) {
             }
             return callback(error);
         }
-        outgoingMedia.setMaxVideoRecvBandwidth(30);
+        outgoingMedia.setMaxVideoRecvBandwidth(100);
         outgoingMedia.setMinVideoRecvBandwidth(20);
         userSession.outgoingMedia = outgoingMedia;
 
@@ -253,6 +281,18 @@ function join(socket, room, callback) {
         // register user to room
         room.participants[userSession.id] = userSession;
 
+        //MP4 has working sound in VLC, not in windows media player,
+        //default mediaProfile is .webm which does have sound but lacks IE support
+        var recorderParams = {
+            mediaProfile: 'MP4',
+            uri: "file:///tmp/file"+userSession.id+ ".mp4"
+        };
+
+        room.pipeline.create('RecorderEndpoint', recorderParams, function(error, recorderEndpoint){
+            userSession.outgoingMedia.recorderEndpoint = recorderEndpoint;
+            outgoingMedia.connect(recorderEndpoint);
+        });
+
         callback(null, userSession);
     });
 }
@@ -299,6 +339,11 @@ function leaveRoom(sessionId, callback) {
         user.sendMessage(data);
     }
 
+    // Release pipeline and delete room when room is empty
+    if (Object.keys(room.participants).length == 0) {
+        room.pipeline.release();
+        delete rooms[userSession.roomName];
+    }
     delete userSession.roomName;
 }
 
@@ -411,7 +456,6 @@ function getEndpointForUser(userSession, sender, callback) {
             if (error) {
                 return callback(error);
             }
-
             room.pipeline.create('WebRtcEndpoint', function (error, incomingMedia) {
                 if (error) {
                     // no participants in room yet release pipeline
@@ -421,7 +465,7 @@ function getEndpointForUser(userSession, sender, callback) {
                     return callback(error);
                 }
                 console.log('user : ' + userSession.id + ' successfully created pipeline');
-                incomingMedia.setMaxVideoSendBandwidth(30);
+                incomingMedia.setMaxVideoSendBandwidth(100);
                 incomingMedia.setMinVideoSendBandwidth(20);
                 userSession.incomingMedia[sender.id] = incomingMedia;
 
@@ -450,7 +494,6 @@ function getEndpointForUser(userSession, sender, callback) {
                     }
                     callback(null, incomingMedia);
                 });
-
             });
         });
     } else {
@@ -494,6 +537,72 @@ function getKurentoClient(callback) {
 
         callback(null, kurentoClient);
     });
+}
+
+/**
+ * Start recording room
+ */
+function startRecord(socket) {
+    var userSession = userRegistry.getById(socket.id);
+
+    if (!userSession) {
+        return;
+    }
+
+    var room = rooms[userSession.roomName];
+
+    if(!room){
+        return;
+    }
+
+    var usersInRoom = room.participants;
+
+    var data = {
+        id: 'startRecording'
+    };
+
+    for (var i in usersInRoom) {
+        var user = usersInRoom[i];
+        // release viewer from this
+        user.outgoingMedia.recorderEndpoint.record()
+
+        // notify all user in the room
+        user.sendMessage(data);
+        console.log(user.id);
+    }
+}
+
+/**
+ * Stop recording room
+ */
+function stopRecord(socket) {
+    var userSession = userRegistry.getById(socket.id);
+
+    if (!userSession) {
+        return;
+    }
+
+    var room = rooms[userSession.roomName];
+
+    if(!room){
+        return;
+    }
+
+    var usersInRoom = room.participants;
+
+    var data = {
+        id: 'stopRecording'
+    };
+
+    for (var i in usersInRoom) {
+        var user = usersInRoom[i];
+        // release viewer from this
+        user.outgoingMedia.recorderEndpoint.stop()
+
+        // notify all user in the room
+        user.sendMessage(data);
+        console.log(user.id);
+    }
 }
 
 /**

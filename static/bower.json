@@ -19,6 +19,8 @@
         "tests"
     ],
     "dependencies": {
-        "kurento-utils": "https://github.com/Mobilea/kurento-utils-js.git#master"
+        "kurento-utils-temasys": "https://github.com/Mobilea/kurento-utils-js.git#master",
+        "adapter.js": "*",
+        "kurento-utils": "master"
     }
 }

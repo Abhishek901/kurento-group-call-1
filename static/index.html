@@ -4,10 +4,14 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 
     <link rel="stylesheet" href="css/kurento.css">
-    <script src="lib/adapterjs/publish/adapter.debug.js"></script>
+    <!-- Standard adapter/kurento-utils -->
+    <script src="bower_components/adapter.js/adapter.js"></script>
+    <script src="bower_components/kurento-utils/js/kurento-utils.js"></script>
 
-    <!-- Use our version for IE/Safari, Their version for other browsers -->
-    <script src="bower_components/kurento-utils/dist/kurento-utils.js"></script>
+    <!-- Temasys adapter/kurento-utils -->
+    <!--<script src="lib/adapterjs/publish/adapter.debug.js"></script>
+    <script src="bower_components/kurento-utils-temasys/dist/kurento-utils.js"></script>-->
+
     <script src="/socket.io/socket.io.js"></script>
 
     <script src="js/index.js"></script>
@@ -29,6 +33,8 @@
     <input type="text" disabled="disabled" name="otherUserName" value="" id="otherUserName"
            placeholder="Other registered username">
     <button id="sendInvite" disabled="disabled" onClick="call()">Send invite</button><br />
+    <button id="startRecording" disabled="disabled" onClick="startRecording()">Start recording</button>
+    <button id="stopRecording" disabled="disabled" onClick="stopRecording()">Stop recording</button><br />
     <button id="leaveRoom" disabled="disabled" onClick="leaveRoom()">Leave room</button>
     <div id="video_list">
 
