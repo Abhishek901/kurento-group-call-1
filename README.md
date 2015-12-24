@@ -468,15 +468,15 @@ This should probably be able to fix the Kurento Media Server crash bug?
 ---
 # Known bugs:
 
-** Kurento Media Server crash**
+**Kurento Media Server crash**
 
 If the Kurento-media-server-6.0 service restarts or crashes during a call and a user tries to join an existing room afterwards, the Kurento Client will try to use the old connection to the media server and will crash server.js.
 
-** Stopping recording **
+**Stopping recording**
 
 When a user starts recording and then leaves the room, the recording will still continue for the remaining users unless someone else in the room clicks on Stop Recording
 
-** Single frame video with audio **
+**Single frame video with audio**
 
 When trying to record a file and the file already exists, it sometimes records a video that has 1 frame of video and working audio.
 
